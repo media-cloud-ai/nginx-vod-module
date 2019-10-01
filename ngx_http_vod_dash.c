@@ -30,6 +30,7 @@ static u_char mpd_content_type[] = "application/dash+xml";
 static u_char webm_audio_content_type[] = "audio/webm";
 static u_char webm_video_content_type[] = "video/webm";
 static u_char vtt_content_type[] = "text/vtt";
+static u_char ttml_content_type[] = "application/ttml+xml";
 
 // file extensions
 static const u_char manifest_file_ext[] = ".mpd";
@@ -37,6 +38,7 @@ static const u_char init_segment_file_ext[] = ".mp4";
 static const u_char fragment_file_ext[] = ".m4s";
 static const u_char webm_file_ext[] = ".webm";
 static const u_char vtt_file_ext[] = ".vtt";
+static const u_char ttml_file_ext[] = ".ttml";
 
 static ngx_int_t 
 ngx_http_vod_dash_handle_manifest(
@@ -404,11 +406,36 @@ ngx_http_vod_dash_handle_vtt_file(
 	return NGX_OK;
 }
 
+static ngx_int_t
+ngx_http_vod_dash_handle_ttml_file(
+	ngx_http_vod_submodule_context_t* submodule_context,
+	ngx_str_t* response,
+	ngx_str_t* content_type)
+{
+	vod_status_t rc;
+	
+	rc = webvtt_builder_build(
+		&submodule_context->request_context,
+		&submodule_context->media_set,
+		submodule_context->media_set.use_discontinuity,
+		response);
+	if (rc != VOD_OK)
+	{
+		ngx_log_debug1(NGX_LOG_DEBUG_HTTP, submodule_context->request_context.log, 0,
+			"ngx_http_vod_dash_handle_ttml_file: ttml_builder_build failed %i", rc);
+		return ngx_http_vod_status_to_ngx_error(submodule_context->r, rc);
+	}
+
+	content_type->len = sizeof(ttml_content_type) - 1;
+	content_type->data = (u_char *)ttml_content_type;
+	return NGX_OK;
+}
+
 static const ngx_http_vod_request_t dash_manifest_request = {
 	REQUEST_FLAG_TIME_DEPENDENT_ON_LIVE,
 	PARSE_FLAG_DURATION_LIMITS_AND_TOTAL_SIZE | PARSE_FLAG_INITIAL_PTS_DELAY | PARSE_FLAG_CODEC_NAME,
 	REQUEST_CLASS_MANIFEST,
-	SUPPORTED_CODECS | VOD_CODEC_FLAG(WEBVTT),
+	SUPPORTED_CODECS | VOD_CODEC_FLAG(WEBVTT),//| VOD_CODEC_FLAG(TTML),
 	DASH_TIMESCALE,
 	ngx_http_vod_dash_handle_manifest,
 	NULL,
@@ -471,6 +498,16 @@ static const ngx_http_vod_request_t dash_webvtt_file_request = {
 	VOD_CODEC_FLAG(WEBVTT),
 	WEBVTT_TIMESCALE,
 	ngx_http_vod_dash_handle_vtt_file,
+	NULL,
+};
+
+static const ngx_http_vod_request_t dash_ttml_file_request = {
+	REQUEST_FLAG_SINGLE_TRACK | REQUEST_FLAG_PARSE_ALL_CLIPS,
+	PARSE_FLAG_FRAMES_ALL | PARSE_FLAG_EXTRA_DATA,
+	REQUEST_CLASS_OTHER,
+	VOD_CODEC_FLAG(WEBVTT),
+	WEBVTT_TIMESCALE,
+	ngx_http_vod_dash_handle_ttml_file,
 	NULL,
 };
 
@@ -574,6 +611,14 @@ ngx_http_vod_dash_parse_uri_file_name(
 		start_pos += conf->dash.mpd_config.subtitle_file_name_prefix.len;
 		end_pos -= (sizeof(vtt_file_ext) - 1);
 		*request = &dash_webvtt_file_request;
+		flags = PARSE_FILE_NAME_ALLOW_CLIP_INDEX;
+	}
+	// ttml file
+	else if (ngx_http_vod_match_prefix_postfix(start_pos, end_pos, &conf->dash.mpd_config.subtitle_file_name_prefix, ttml_file_ext))
+	{
+		start_pos += conf->dash.mpd_config.subtitle_file_name_prefix.len;
+		end_pos -= (sizeof(ttml_file_ext) - 1);
+		*request = &dash_ttml_file_request;
 		flags = PARSE_FILE_NAME_ALLOW_CLIP_INDEX;
 	}
 	else
