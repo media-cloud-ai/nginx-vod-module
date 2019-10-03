@@ -112,7 +112,7 @@
 #define VOD_DASH_MANIFEST_ADAPTATION_FOOTER										\
 	"    </AdaptationSet>\n"
 
-#define VOD_DASH_MANIFEST_ADAPTATION_SUBTITLE									\
+#define VOD_DASH_MANIFEST_ADAPTATION_WEBVTT										\
 	"    <AdaptationSet\n"														\
 	"        contentType=\"text\"\n"											\
 	"        lang=\"%s\"\n"														\
@@ -121,7 +121,20 @@
 	"      <Representation\n"													\
 	"          id=\"textstream_%s_%uD\"\n"										\
 	"          bandwidth=\"0\">\n"												\
-	"        <BaseURL>%V%V-%s%V.vtt</BaseURL>\n"									\
+	"        <BaseURL>%V%V-%s%V.vtt</BaseURL>\n"								\
+	"      </Representation>\n"													\
+	"    </AdaptationSet>\n"
+
+#define VOD_DASH_MANIFEST_ADAPTATION_TTML										\
+	"    <AdaptationSet\n"														\
+	"        contentType=\"text\"\n"											\
+	"        lang=\"%s\"\n"														\
+	"        label=\"%V\"\n"													\
+	"        mimeType=\"application/ttml+xml\">\n"								\
+	"      <Representation\n"													\
+	"          id=\"textstream_%s_%uD\"\n"										\
+	"          bandwidth=\"0\">\n"												\
+	"        <BaseURL>%V%V-%s%V.ttml</BaseURL>\n"								\
 	"      </Representation>\n"													\
 	"    </AdaptationSet>\n"
 
@@ -837,7 +850,8 @@ dash_packager_write_mpd_period(
 			}
 
 			lang_code = lang_get_rfc_5646_name(cur_track->media_info.language);
-			p = vod_sprintf(p, VOD_DASH_MANIFEST_ADAPTATION_SUBTITLE, 
+
+			p = vod_sprintf(p, VOD_DASH_MANIFEST_ADAPTATION_TTML, 
 				lang_code,
 				&cur_track->media_info.label,
 				lang_code,
@@ -1280,7 +1294,7 @@ dash_packager_build_mpd(
 			(sizeof(VOD_DASH_MANIFEST_REPRESENTATION_HEADER_AUDIO) - 1 + MAX_TRACK_SPEC_LENGTH + MAX_MIME_TYPE_SIZE + MAX_CODEC_NAME_SIZE + 2 * VOD_INT32_LEN +
 			sizeof(VOD_DASH_MANIFEST_REPRESENTATION_FOOTER) - 1) * media_set->track_count[MEDIA_TYPE_AUDIO] +
 			// subtitle adaptations
-			(sizeof(VOD_DASH_MANIFEST_ADAPTATION_SUBTITLE) - 1 + 2 * LANG_ISO639_3_LEN + VOD_INT32_LEN +
+			(sizeof(VOD_DASH_MANIFEST_ADAPTATION_WEBVTT) - 1 + 2 * LANG_ISO639_3_LEN + VOD_INT32_LEN +
 			context.base_url.len + conf->subtitle_file_name_prefix.len + MAX_CLIP_SPEC_LENGTH + MAX_TRACK_SPEC_LENGTH) *
 			context.adaptation_sets.count[ADAPTATION_TYPE_SUBTITLE] +
 		sizeof(VOD_DASH_MANIFEST_PERIOD_FOOTER) - 1 +

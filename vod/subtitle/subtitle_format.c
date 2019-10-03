@@ -85,7 +85,8 @@ subtitle_parse(
 
 	*result = &metadata->base;
 
-	if (!vod_codec_in_mask(VOD_CODEC_ID_WEBVTT, parse_params->codecs_mask))
+	if (!vod_codec_in_mask(VOD_CODEC_ID_WEBVTT, parse_params->codecs_mask) &&
+		!vod_codec_in_mask(VOD_CODEC_ID_TTML, parse_params->codecs_mask) )
 	{
 		metadata->base.tracks.nelts = 0;
 		return VOD_OK;
@@ -137,7 +138,7 @@ subtitle_parse(
 	track = vod_array_push(&metadata->base.tracks);		// can't fail
 	vod_memzero(track, sizeof(*track));
 	track->media_info.media_type = MEDIA_TYPE_SUBTITLE;
-	track->media_info.codec_id = VOD_CODEC_ID_WEBVTT;
+	track->media_info.codec_id = VOD_CODEC_ID_TTML;
 	track->media_info.timescale = 1000;
 	track->media_info.frames_timescale = 1000;
 	track->media_info.duration = duration;

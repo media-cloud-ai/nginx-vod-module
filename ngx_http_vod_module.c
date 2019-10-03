@@ -2139,7 +2139,8 @@ ngx_http_vod_state_machine_parse_metadata(ngx_http_vod_ctx_t *ctx)
 				ctx->metadata_parts[0].len = 0;
 				ctx->metadata_parts[0].data = (void*)(ctx->metadata_parts + 1);
 				ctx->metadata_parts[0].data[0] = '\0';
-				multipart_header.type = FORMAT_ID_WEBVTT;
+				// multipart_header.type = FORMAT_ID_WEBVTT;
+				multipart_header.type = FORMAT_ID_TTML;
 				metadata_loaded = TRUE;
 			}
 			else if (conf->metadata_cache != NULL)

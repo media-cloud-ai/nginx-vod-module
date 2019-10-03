@@ -412,19 +412,46 @@ ngx_http_vod_dash_handle_ttml_file(
 	ngx_str_t* response,
 	ngx_str_t* content_type)
 {
-	vod_status_t rc;
-	
-	rc = webvtt_builder_build(
-		&submodule_context->request_context,
-		&submodule_context->media_set,
-		submodule_context->media_set.use_discontinuity,
-		response);
-	if (rc != VOD_OK)
+	FILE* ttml_file;
+	char* buffer;
+	u_char* p;
+	long numbytes;
+
+	vod_str_t filename = submodule_context->media_set.filtered_tracks->file_info.source->mapped_uri;
+
+	ttml_file = fopen((const char *)filename.data, "r");
+
+	if (ttml_file == NULL)
 	{
-		ngx_log_debug1(NGX_LOG_DEBUG_HTTP, submodule_context->request_context.log, 0,
-			"ngx_http_vod_dash_handle_ttml_file: ttml_builder_build failed %i", rc);
-		return ngx_http_vod_status_to_ngx_error(submodule_context->r, rc);
+		return ngx_http_vod_status_to_ngx_error(submodule_context->r, VOD_BAD_DATA);
 	}
+
+	fseek(ttml_file, 0L, SEEK_END);
+	numbytes = ftell(ttml_file);
+	fseek(ttml_file, 0L, SEEK_SET);
+
+	buffer = (char*)calloc(numbytes, sizeof(char));
+
+	fread(buffer, sizeof(char), numbytes, ttml_file);
+
+	fclose(ttml_file);
+
+	p = vod_alloc(submodule_context->request_context.pool, numbytes);
+
+	if (p == NULL)
+	{
+		vod_log_debug0(VOD_LOG_DEBUG_LEVEL, request_context->log, 0,
+			"ngx_http_vod_dash_handle_ttml_file: vod_alloc failed");
+		return VOD_ALLOC_FAILED;
+	}
+
+	response->data = p;
+
+	p = vod_copy(p, buffer, numbytes);
+
+	free(buffer);
+
+	response->len = p - response->data;
 
 	content_type->len = sizeof(ttml_content_type) - 1;
 	content_type->data = (u_char *)ttml_content_type;
@@ -435,7 +462,7 @@ static const ngx_http_vod_request_t dash_manifest_request = {
 	REQUEST_FLAG_TIME_DEPENDENT_ON_LIVE,
 	PARSE_FLAG_DURATION_LIMITS_AND_TOTAL_SIZE | PARSE_FLAG_INITIAL_PTS_DELAY | PARSE_FLAG_CODEC_NAME,
 	REQUEST_CLASS_MANIFEST,
-	SUPPORTED_CODECS | VOD_CODEC_FLAG(WEBVTT),//| VOD_CODEC_FLAG(TTML),
+	SUPPORTED_CODECS | VOD_CODEC_FLAG(WEBVTT) | VOD_CODEC_FLAG(TTML),
 	DASH_TIMESCALE,
 	ngx_http_vod_dash_handle_manifest,
 	NULL,
@@ -505,7 +532,7 @@ static const ngx_http_vod_request_t dash_ttml_file_request = {
 	REQUEST_FLAG_SINGLE_TRACK | REQUEST_FLAG_PARSE_ALL_CLIPS,
 	PARSE_FLAG_FRAMES_ALL | PARSE_FLAG_EXTRA_DATA,
 	REQUEST_CLASS_OTHER,
-	VOD_CODEC_FLAG(WEBVTT),
+	VOD_CODEC_FLAG(TTML),
 	WEBVTT_TIMESCALE,
 	ngx_http_vod_dash_handle_ttml_file,
 	NULL,
