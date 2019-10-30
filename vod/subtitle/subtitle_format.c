@@ -101,8 +101,8 @@ subtitle_parse(
 	}
 	else
 	{
-		// no language, assume English
-		lang_id = VOD_LANG_EN;
+		// no language, assume French
+		lang_id = VOD_LANG_FR;
 		lang_get_native_name(lang_id, &label);
 	}
 
