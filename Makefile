@@ -6,7 +6,7 @@ ifeq ($(shell test -e $(ENVFILE) && echo -n yes),yes)
 	export
 endif
 
-DOCKER_REGISTRY?=registry.ftven.net
+DOCKER_REGISTRY?=
 DOCKER_IMG_NAME?=media-cloud-ai/nginx_vod_module
 ifneq ($(DOCKER_REGISTRY), ) 
 	DOCKER_IMG_NAME := /${DOCKER_IMG_NAME}

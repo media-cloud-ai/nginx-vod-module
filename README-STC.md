@@ -59,4 +59,4 @@ For example, you've created a folder named `my-first-video` in `mnt-data`. In th
 ```
 <!-- language: markdown -->
 
-You want to generate a manifest describing the video and list selected subtitles files (only TTML), you could do this using the following URL: http://nginx.mca.integ.ftven.net/dash/medias/210221431-5d4b1a5d3a155-,standard5.mp4,1565203264.ttml,0987654321.ttml,.urlset/manifest.mpd
+You want to generate a manifest describing the video and list selected subtitles files (only TTML), you could do this using the following URL: http://nginx.vod.module.net/dash/medias/210221431-5d4b1a5d3a155-,standard5.mp4,1565203264.ttml,0987654321.ttml,.urlset/manifest.mpd
